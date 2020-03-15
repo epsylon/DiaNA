@@ -27,7 +27,7 @@ genomes = {} # main sources dict: genome_name
 seeds_checked = [] # list used for random checked patterns
 repeats = {} # repetitions 'tmp' dict: genome_name:(repets,pattern)
 known_patterns = [] # list used for known patterns
-estimated_max_range_for_library_completed = 20 # [MAX. LENGTH] for range [PATTERN]
+estimated_max_range_for_library_completed = 50 # [MAX. LENGTH] for range [PATTERN]
 estimated_patterns_for_library_completed = 1466015503700 # x = y+4^z
 estimated_quantity_per_pattern_for_library_completed = int(estimated_patterns_for_library_completed / estimated_max_range_for_library_completed)
 
@@ -45,17 +45,19 @@ def search_pattern_with_human():
     print("\n"+"-"*5 + "\n")
     create_new_pattern(pattern) # create new pattern
 
-def try_pattern_against_all_genomes(pattern):
-    patterns_found = 0
+def try_pattern_against_all_genomes_by_genome(pattern):
     for k, v in genomes.items():
         if pattern in v:
             t = len(re.findall(pattern, v))
-            print (" *", k +":", "-> [",t,"times ]")
-            repeats[k] = t, pattern
-            patterns_found = patterns_found + 1
-            print("")
-    if patterns_found == 0:
-        print("[INFO] -> Not any found! ... [EXITING!]\n")
+            repeats[k] = t, pattern # create dict: genome = times, pattern
+
+def try_pattern_against_all_genomes_by_pattern(pattern, index):
+    p_index = 0 # pattern index
+    for k, v in genomes.items():
+        if pattern in v:
+            p_index = p_index + 1
+            t = len(re.findall(pattern, v))
+            repeats[index,p_index] = pattern, k, t # create dict: index, p_index = pattern, genome, times
 
 def sanitize_dna_pattern(pattern):
     valid_pattern = True
@@ -135,10 +137,18 @@ def create_new_pattern(pattern): # append it to brain
     if valid_pattern == True:
         if pattern not in known_patterns:
             known_patterns.append(pattern)
-            try_pattern_against_all_genomes(pattern)
-    f=open(brain_path, 'a')    
-    f.write(str(repeats)+os.linesep) # add dict as str
-    f.close()
+            try_pattern_against_all_genomes_by_genome(pattern) # generate repeats dict
+        patterns_found = 0
+        for k, v in repeats.items(): # list patterns found to output
+            print (" *", k +":", "-> ",v,"")
+            patterns_found = patterns_found + 1
+            print("")
+        if patterns_found == 0:
+            print("[INFO] -> Not any found! ... [EXITING!]\n")
+        else:
+            f=open(brain_path, 'a')    
+            f.write(str(repeats)+os.linesep) # add dict as str
+            f.close()
 
 def teach_ai_automata_mode(): # search patterns by bruteforcing ranges & generate local database
     search_patterns_lesson_with_an_ai()
@@ -261,8 +271,9 @@ def libre_ai_show_statistics(memory):
     total_cytosine = 0
     total_thymine = 0
     total_any = 0
+    total_patterns = 0
     secuence_length = 0
-    secuences_list = {}
+    secuences_length_list = {}
     largest = None
     largest_len = 0
     shortest_len = 0
@@ -270,22 +281,13 @@ def libre_ai_show_statistics(memory):
     shortest = None
     for k, v in genomes.items():
         secuence_length = len(v)
-        secuences_list[k] = str(secuence_length)
+        secuences_length_list[k] = str(secuence_length)
         total_genomes = total_genomes + 1
         total_adenine = total_adenine + v.count("A")
         total_guanine = total_guanine + v.count("G")
         total_cytosine = total_cytosine + v.count("C")
         total_thymine = total_thymine + v.count("T")
         total_any = total_any + v.count("N")
-    largest = max(secuences_list, key=secuences_list.get)
-    shortest = min(secuences_list, key=secuences_list.get) 
-    for k, v in genomes.items():
-        if k == largest:
-            largest_len = len(v)
-        elif k == shortest:
-            shortest_len = len(v)
-        else:
-            pass
     path = genomes_path # genome datasets raw data
     l = glob.glob(genomes_path+"*") # black magic!
     latest_collection_file = max(l, key=os.path.getctime)
@@ -303,8 +305,38 @@ def libre_ai_show_statistics(memory):
     print("\n"+"-"*5 + "\n")
     print("[LIBRE-AI] [REPORTING] -ANALYSIS- [STATISTICS]: \n")
     print(" * Total [DNA SECUENCES]: [ "+str(total_genomes)+" ]\n")
-    print("   + [LARGEST]: "+str(largest)+ " [ "+str(largest_len)+" bp linear RNA ]")
-    print("   + [SHORTEST]: "+str(shortest)+ " [ "+str(shortest_len)+" bp linear RNA ]\n")
+    largest = 0
+    largest_pattern_name = []
+    largest_pattern_size = []
+    for k, v in secuences_length_list.items():
+        if int(v) > int(largest):
+            largest = v
+            largest_pattern_name.append(k)
+            largest_pattern_size.append(largest)
+    for p in largest_pattern_name:           
+        largest_pattern_name = p
+    for s in largest_pattern_size:
+        largest_pattern_size = s
+    print("   + [LARGEST] : "+str(largest_pattern_name)+ " [ "+str(largest_pattern_size)+" bp linear RNA ]")
+    prev_shortest = None
+    shortest_pattern_name = []
+    shortest_pattern_size = []
+    for k, v in secuences_length_list.items():
+        if prev_shortest == None:
+            shortest = v
+            shortest_pattern_name.append(k)
+            shortest_pattern_size.append(shortest)
+            prev_shortest = True
+        else:
+            if int(v) < int(shortest):
+                shortest = v
+                shortest_pattern_name.append(k)
+                shortest_pattern_size.append(shortest)
+    for p in shortest_pattern_name:           
+        shortest_pattern_name = p
+    for s in shortest_pattern_size:
+        shortest_pattern_size = s
+    print("   + [SHORTEST]: "+str(shortest_pattern_name)+ " [ "+str(shortest_pattern_size)+" bp linear RNA ]\n")
     print(" * Total [NUCLEOTIDS]: [ "+str(num_total_nucleotids)+" ]\n")
     if nucleotid_more_present == total_adenine:
         print("   + [A] Adenine  : "+str(total_adenine)+" <- [MAX]")
@@ -354,13 +386,71 @@ def extract_pattern_most_present_local(memory):
     memory_dict = convert_memory_to_dict(memory)
     if memory_dict:
         print("[LIBRE-AI] [REPORTING] -RESEARCHING- [STATISTICS]: \n")
-        total_patterns_found = 0
         total_genomes = 0
-        for k, v in memory_dict.items():
-            total_patterns_found = total_patterns_found + 1
+        total_patterns = 0
         for k, v in genomes.items():
             total_genomes = total_genomes + 1
-        print(" * [ "+str(total_patterns_found)+" ] [PATTERNS FOUND!] in: [ "+str(total_genomes)+ " ] [DNA SECUENCES]\n")
+        for m in memory:
+            total_patterns = total_patterns + 1 # counter used for known patterns
+        max_size_pattern_name, less_size_pattern_name, biggest_pattern_name, biggest_pattern_size, smaller_pattern_name, smaller_pattern_size, total_patterns_all_genomes = extract_patterns_most_found_in_all_genomes(memory_dict)
+        print(" * Trying -[ "+str(total_patterns)+" ]- [PATTERNS LEARNED!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+        print("\n   + Total [PATTERNS FOUND!]: [ "+str(total_patterns_all_genomes)+" ]")
+        print("\n     - [LARGEST] : [ "+str(max_size_pattern_name)+" ] -> [ "+str(len(max_size_pattern_name))+" bp linear RNA ]")
+        print("     - [SHORTEST]: [ "+str(less_size_pattern_name)+" ] -> [ "+str(len(less_size_pattern_name))+" bp linear RNA ]\n")
+        print("     - [MOST-PRESENT!]: [ "+str(biggest_pattern_name)+" ] -> [ "+str(biggest_pattern_size)+" ] time(s)")
+        print("     - [LESS-PRESENT!]: [ "+str(smaller_pattern_name)+" ] -> [ "+str(smaller_pattern_size)+" ] time(s)\n")
+
+def extract_patterns_most_found_in_all_genomes(memory_dict):
+    present_patterns = []
+    for m, p in memory_dict.items():
+        pattern = p[1]
+        if pattern not in present_patterns:
+            present_patterns.append(pattern)
+    index = 0 # genome num index
+    for pattern in present_patterns:
+        index = index + 1
+        try_pattern_against_all_genomes_by_pattern(pattern, index)
+    total_patterns_all_genomes = 0
+    largest_size_by_pattern = {}
+    largest_size_by_pattern_index = 0
+    for k,v in repeats.items():
+        largest_size_by_pattern_index = largest_size_by_pattern_index + 1
+        total_patterns_all_genomes = total_patterns_all_genomes + v[2] # total patterns all genomes
+        largest_size_by_pattern[largest_size_by_pattern_index] = v[0], v[2]
+    total_patterns_by_pattern = 0
+    list_total_patterns_by_pattern = {}
+    for i, v in largest_size_by_pattern.items():
+        total_patterns_by_pattern = total_patterns_by_pattern + v[1]
+        list_total_patterns_by_pattern[v[0]] = total_patterns_by_pattern
+        total_patterns_by_pattern = 0 # reset patterns counter
+    biggest_pattern_name = None
+    biggest_pattern_size = 0
+    smaller_pattern_name = None
+    smaller_pattern_size = 0
+    max_size_pattern = 0
+    for r, z in list_total_patterns_by_pattern.items():
+        pattern_length = len(r)
+        if pattern_length > max_size_pattern:
+           max_size_pattern_name = r
+        if biggest_pattern_name == None:
+           biggest_pattern_name = r
+           smaller_pattern_name = r
+           biggest_pattern_size = z
+           smaller_pattern_size = z
+           less_size_pattern_name = r
+           less_size_pattern_size = z
+        else:
+           if pattern_length < less_size_pattern_size:
+               less_size_pattern_size = pattern_length
+               less_size_pattern_name = r
+           if z > biggest_pattern_size:
+               biggest_pattern_name = r
+               biggest_pattern_size = z
+           else:
+               if z < smaller_pattern_size:
+                   smaller_pattern_name = r
+                   smaller_pattern_size = z
+    return max_size_pattern_name, less_size_pattern_name, biggest_pattern_name, biggest_pattern_size, smaller_pattern_name, smaller_pattern_size, total_patterns_all_genomes
 
 def extract_storage_sizes():
     total_dataset_size = 0
@@ -399,7 +489,7 @@ def extract_total_patterns_learned_from_local(memory):
     total_patterns = 0
     for m in memory:
         total_patterns = total_patterns + 1
-    print(" * [SETTINGS] Using [MAX. LENGTH] for range [PATTERN] = "+str(estimated_max_range_for_library_completed)+"\n")
+    print(" * [SETTINGS] Using [MAX. LENGTH] for range [PATTERN] = [ "+str(estimated_max_range_for_library_completed)+" ]\n")
     if total_patterns < estimated_patterns_for_library_completed:
         library_completion = (total_patterns/estimated_patterns_for_library_completed)*100
         print("   + [LIBRARY COMPLETED]: [ "+str('%.20f' % library_completion)+"% ]")
@@ -416,7 +506,7 @@ def extract_total_patterns_learned_from_local(memory):
             print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]\n")
         else:
             print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]")
-    pattern_len_1 = 0
+    pattern_len_1 = 0 # related with [MAX. LENGTH] range
     pattern_len_2 = 0
     pattern_len_3 = 0
     pattern_len_4 = 0
@@ -436,10 +526,43 @@ def extract_total_patterns_learned_from_local(memory):
     pattern_len_18 = 0
     pattern_len_19 = 0
     pattern_len_20 = 0
+    pattern_len_21 = 0
+    pattern_len_22 = 0
+    pattern_len_23 = 0
+    pattern_len_24 = 0
+    pattern_len_25 = 0
+    pattern_len_26 = 0
+    pattern_len_27 = 0
+    pattern_len_28 = 0
+    pattern_len_29 = 0
+    pattern_len_30 = 0
+    pattern_len_31 = 0
+    pattern_len_32 = 0
+    pattern_len_33 = 0
+    pattern_len_34 = 0
+    pattern_len_35 = 0
+    pattern_len_36 = 0
+    pattern_len_37 = 0
+    pattern_len_38 = 0
+    pattern_len_39 = 0
+    pattern_len_40 = 0
+    pattern_len_41 = 0
+    pattern_len_42 = 0
+    pattern_len_43 = 0
+    pattern_len_44 = 0
+    pattern_len_45 = 0
+    pattern_len_46 = 0
+    pattern_len_47 = 0
+    pattern_len_48 = 0
+    pattern_len_49 = 0
+    pattern_len_50 = 0
     for m in memory:
-        pattern_len = m.split(", '")[1]
-        pattern_len = pattern_len.split("')")[0]
-        pattern_len = len(pattern_len)
+        try:
+            pattern_len = m.split(", '")[1]
+            pattern_len = pattern_len.split("')")[0]
+            pattern_len = len(pattern_len)
+        except:
+            pattern_len = 0 # discard!
         if pattern_len == 1:
             pattern_len_1 = pattern_len_1 + 1
         elif pattern_len == 2:
@@ -478,8 +601,70 @@ def extract_total_patterns_learned_from_local(memory):
             pattern_len_18 = pattern_len_18 + 1
         elif pattern_len == 19:
             pattern_len_19 = pattern_len_19 + 1
-        else:
+        elif pattern_len == 20:
             pattern_len_20 = pattern_len_20 + 1
+        elif pattern_len == 21:
+            pattern_len_21 = pattern_len_21 + 1
+        elif pattern_len == 22:
+            pattern_len_22 = pattern_len_22 + 1
+        elif pattern_len == 23:
+            pattern_len_23 = pattern_len_23 + 1
+        elif pattern_len == 24:
+            pattern_len_24 = pattern_len_24 + 1
+        elif pattern_len == 25:
+            pattern_len_25 = pattern_len_25 + 1
+        elif pattern_len == 26:
+            pattern_len_26 = pattern_len_26 + 1
+        elif pattern_len == 27:
+            pattern_len_27 = pattern_len_27 + 1
+        elif pattern_len == 28:
+            pattern_len_28 = pattern_len_28 + 1
+        elif pattern_len == 29:
+            pattern_len_29 = pattern_len_29 + 1
+        elif pattern_len == 30:
+            pattern_len_30 = pattern_len_30 + 1
+        elif pattern_len == 31:
+            pattern_len_31 = pattern_len_31 + 1
+        elif pattern_len == 32:
+            pattern_len_32 = pattern_len_32 + 1
+        elif pattern_len == 33:
+            pattern_len_33 = pattern_len_33 + 1
+        elif pattern_len == 34:
+            pattern_len_34 = pattern_len_34 + 1
+        elif pattern_len == 35:
+            pattern_len_35 = pattern_len_35 + 1
+        elif pattern_len == 36:
+            pattern_len_36 = pattern_len_36 + 1
+        elif pattern_len == 37:
+            pattern_len_37 = pattern_len_37 + 1
+        elif pattern_len == 38:
+            pattern_len_38 = pattern_len_38 + 1
+        elif pattern_len == 39:
+            pattern_len_39 = pattern_len_39 + 1
+        elif pattern_len == 40:
+            pattern_len_40 = pattern_len_40 + 1
+        elif pattern_len == 41:
+            pattern_len_41 = pattern_len_41 + 1
+        elif pattern_len == 42:
+            pattern_len_42 = pattern_len_42 + 1
+        elif pattern_len == 43:
+            pattern_len_43 = pattern_len_43 + 1
+        elif pattern_len == 44:
+            pattern_len_44 = pattern_len_44 + 1
+        elif pattern_len == 45:
+            pattern_len_45 = pattern_len_45 + 1
+        elif pattern_len == 46:
+            pattern_len_46 = pattern_len_46 + 1
+        elif pattern_len == 47:
+            pattern_len_47 = pattern_len_47 + 1
+        elif pattern_len == 48:
+            pattern_len_48 = pattern_len_48 + 1
+        elif pattern_len == 49:
+            pattern_len_49 = pattern_len_49 + 1
+        elif pattern_len == 50:
+            pattern_len_50 = pattern_len_50 + 1
+        else:
+            pass
     if pattern_len_1 < 101:
         progression_len_1 = pattern_len_1 * "*"
     else:
@@ -560,6 +745,126 @@ def extract_total_patterns_learned_from_local(memory):
         progression_len_20 = pattern_len_20 * "*"
     else:
         progression_len_20 = 100 * "*+"+str(pattern_len_20-100)
+    if pattern_len_21 < 101:
+        progression_len_21 = pattern_len_21 * "*"
+    else:
+        progression_len_21 = 100 * "*+"+str(pattern_len_21-100)
+    if pattern_len_22 < 101:
+        progression_len_22 = pattern_len_22 * "*"
+    else:
+        progression_len_22 = 100 * "*+"+str(pattern_len_22-100)
+    if pattern_len_23 < 101:
+        progression_len_23 = pattern_len_23 * "*"
+    else:
+        progression_len_23 = 100 * "*+"+str(pattern_len_23-100)
+    if pattern_len_24 < 101:
+        progression_len_24 = pattern_len_24 * "*"
+    else:
+        progression_len_24 = 100 * "*+"+str(pattern_len_24-100)
+    if pattern_len_25 < 101:
+        progression_len_25 = pattern_len_25 * "*"
+    else:
+        progression_len_25 = 100 * "*+"+str(pattern_len_25-100)
+    if pattern_len_26 < 101:
+        progression_len_26 = pattern_len_26 * "*"
+    else:
+        progression_len_26 = 100 * "*+"+str(pattern_len_26-100)
+    if pattern_len_27 < 101:
+        progression_len_27 = pattern_len_27 * "*"
+    else:
+        progression_len_27 = 100 * "*+"+str(pattern_len_27-100)
+    if pattern_len_28 < 101:
+        progression_len_28 = pattern_len_28 * "*"
+    else:
+        progression_len_28 = 100 * "*+"+str(pattern_len_28-100)
+    if pattern_len_29 < 101:
+        progression_len_29 = pattern_len_29 * "*"
+    else:
+        progression_len_29 = 100 * "*+"+str(pattern_len_29-100)
+    if pattern_len_30 < 101:
+        progression_len_30 = pattern_len_30 * "*"
+    else:
+        progression_len_30 = 100 * "*+"+str(pattern_len_30-100)
+    if pattern_len_31 < 101:
+        progression_len_31 = pattern_len_31 * "*"
+    else:
+        progression_len_31 = 100 * "*+"+str(pattern_len_31-100)
+    if pattern_len_32 < 101:
+        progression_len_32 = pattern_len_32 * "*"
+    else:
+        progression_len_32 = 100 * "*+"+str(pattern_len_32-100)
+    if pattern_len_33 < 101:
+        progression_len_33 = pattern_len_33 * "*"
+    else:
+        progression_len_33 = 100 * "*+"+str(pattern_len_33-100)
+    if pattern_len_34 < 101:
+        progression_len_34 = pattern_len_34 * "*"
+    else:
+        progression_len_34 = 100 * "*+"+str(pattern_len_34-100)
+    if pattern_len_35 < 101:
+        progression_len_35 = pattern_len_35 * "*"
+    else:
+        progression_len_35 = 100 * "*+"+str(pattern_len_35-100)
+    if pattern_len_36 < 101:
+        progression_len_36 = pattern_len_36 * "*"
+    else:
+        progression_len_36 = 100 * "*+"+str(pattern_len_36-100)
+    if pattern_len_37 < 101:
+        progression_len_37 = pattern_len_37 * "*"
+    else:
+        progression_len_37 = 100 * "*+"+str(pattern_len_37-100)
+    if pattern_len_38 < 101:
+        progression_len_38 = pattern_len_38 * "*"
+    else:
+        progression_len_38 = 100 * "*+"+str(pattern_len_38-100)
+    if pattern_len_39 < 101:
+        progression_len_39 = pattern_len_39 * "*"
+    else:
+        progression_len_39 = 100 * "*+"+str(pattern_len_39-100)
+    if pattern_len_40 < 101:
+        progression_len_40 = pattern_len_40 * "*"
+    else:
+        progression_len_40 = 100 * "*+"+str(pattern_len_40-100)
+    if pattern_len_41 < 101:
+        progression_len_41 = pattern_len_41 * "*"
+    else:
+        progression_len_41 = 100 * "*+"+str(pattern_len_41-100)
+    if pattern_len_42 < 101:
+        progression_len_42 = pattern_len_42 * "*"
+    else:
+        progression_len_42 = 100 * "*+"+str(pattern_len_42-100)
+    if pattern_len_43 < 101:
+        progression_len_43 = pattern_len_43 * "*"
+    else:
+        progression_len_43 = 100 * "*+"+str(pattern_len_43-100)
+    if pattern_len_44 < 101:
+        progression_len_44 = pattern_len_44 * "*"
+    else:
+        progression_len_44 = 100 * "*+"+str(pattern_len_44-100)
+    if pattern_len_45 < 101:
+        progression_len_45 = pattern_len_45 * "*"
+    else:
+        progression_len_45 = 100 * "*+"+str(pattern_len_45-100)
+    if pattern_len_46 < 101:
+        progression_len_46 = pattern_len_46 * "*"
+    else:
+        progression_len_46 = 100 * "*+"+str(pattern_len_46-100)
+    if pattern_len_47 < 101:
+        progression_len_47 = pattern_len_47 * "*"
+    else:
+        progression_len_47 = 100 * "*+"+str(pattern_len_47-100)
+    if pattern_len_48 < 101:
+        progression_len_48 = pattern_len_48 * "*"
+    else:
+        progression_len_48 = 100 * "*+"+str(pattern_len_48-100)
+    if pattern_len_49 < 101:
+        progression_len_49 = pattern_len_49 * "*"
+    else:
+        progression_len_49 = 100 * "*+"+str(pattern_len_49-100)
+    if pattern_len_50 < 101:
+        progression_len_50 = pattern_len_50 * "*"
+    else:
+        progression_len_50 = 100 * "*+"+str(pattern_len_50-100)
     if pattern_len_1 > 0:
         print("     - [length = 1]  | "+progression_len_1 + " [ "+str(pattern_len_1)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
     if pattern_len_2 > 0:
@@ -599,7 +904,67 @@ def extract_total_patterns_learned_from_local(memory):
     if pattern_len_19 > 0:
         print("     - [length = 19] | "+progression_len_19 + " [ "+str(pattern_len_19)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
     if pattern_len_20 > 0:
-        print("     - [length => 20] | "+progression_len_20 + " [ "+str(pattern_len_20)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 20] | "+progression_len_20 + " [ "+str(pattern_len_20)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_21 > 0:
+        print("     - [length = 21] | "+progression_len_21 + " [ "+str(pattern_len_21)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_22 > 0:
+        print("     - [length = 22] | "+progression_len_22 + " [ "+str(pattern_len_22)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_23 > 0:
+        print("     - [length = 23] | "+progression_len_23 + " [ "+str(pattern_len_23)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_24 > 0:
+        print("     - [length = 24] | "+progression_len_24 + " [ "+str(pattern_len_24)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_25 > 0:
+        print("     - [length = 25] | "+progression_len_25 + " [ "+str(pattern_len_25)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_26 > 0:
+        print("     - [length = 26] | "+progression_len_26 + " [ "+str(pattern_len_26)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_27 > 0:
+        print("     - [length = 27] | "+progression_len_27 + " [ "+str(pattern_len_27)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_28 > 0:
+        print("     - [length = 28] | "+progression_len_28 + " [ "+str(pattern_len_28)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_29 > 0:
+        print("     - [length = 29] | "+progression_len_29 + " [ "+str(pattern_len_29)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_30 > 0:
+        print("     - [length => 30] | "+progression_len_30 + " [ "+str(pattern_len_30)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_31 > 0:
+        print("     - [length = 11] | "+progression_len_31 + " [ "+str(pattern_len_31)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_32 > 0:
+        print("     - [length = 12] | "+progression_len_32 + " [ "+str(pattern_len_32)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_33 > 0:
+        print("     - [length = 13] | "+progression_len_33 + " [ "+str(pattern_len_33)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_34 > 0:
+        print("     - [length = 14] | "+progression_len_34 + " [ "+str(pattern_len_34)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_35 > 0:
+        print("     - [length = 15] | "+progression_len_35 + " [ "+str(pattern_len_35)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_36 > 0:
+        print("     - [length = 16] | "+progression_len_36 + " [ "+str(pattern_len_36)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_37 > 0:
+        print("     - [length = 17] | "+progression_len_37 + " [ "+str(pattern_len_37)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_38 > 0:
+        print("     - [length = 18] | "+progression_len_38 + " [ "+str(pattern_len_38)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_39 > 0:
+        print("     - [length = 19] | "+progression_len_39 + " [ "+str(pattern_len_39)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_40 > 0:
+        print("     - [length = 20] | "+progression_len_30 + " [ "+str(pattern_len_40)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_41 > 0:
+        print("     - [length = 21] | "+progression_len_41 + " [ "+str(pattern_len_41)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_42 > 0:
+        print("     - [length = 22] | "+progression_len_42 + " [ "+str(pattern_len_42)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_43 > 0:
+        print("     - [length = 23] | "+progression_len_43 + " [ "+str(pattern_len_43)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_44 > 0:
+        print("     - [length = 24] | "+progression_len_44 + " [ "+str(pattern_len_44)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_45 > 0:
+        print("     - [length = 25] | "+progression_len_45 + " [ "+str(pattern_len_45)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_46 > 0:
+        print("     - [length = 26] | "+progression_len_46 + " [ "+str(pattern_len_46)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_47 > 0:
+        print("     - [length = 27] | "+progression_len_47 + " [ "+str(pattern_len_47)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_48 > 0:
+        print("     - [length = 28] | "+progression_len_48 + " [ "+str(pattern_len_48)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_49 > 0:
+        print("     - [length = 29] | "+progression_len_49 + " [ "+str(pattern_len_49)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+    if pattern_len_50 > 0:
+        print("     - [length => 30] | "+progression_len_50 + " [ "+str(pattern_len_50)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
     return memory
 
 def list_genomes_on_database():
