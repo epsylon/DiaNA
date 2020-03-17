@@ -163,10 +163,8 @@ def search_patterns_lesson_with_an_ai():
         ranged_ending = False
         print("-"*15)
         print("\n[TRAIN-AI] [AUTOMATA] [SEARCH] Number of [PERMUTATIONS] estimated: [ "+str(ranged_permutations)+" ]\n")
-        time.sleep(10)
         print("-"*15+"\n")
         num_pat = 0
-        time.sleep(10)
         while ranged_ending == False: # try to STOP it using: CTRL-z
             try:
                 pattern, ranged_ending = generate_random_pattern(ranges, ranged_permutations) # generate random seed
