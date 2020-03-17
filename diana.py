@@ -17,19 +17,17 @@ DNA-equiv:
  A <-> T
  C <-> G
 """
-import re, os, glob, random, time, math 
+import re, os, glob, random, time, math
 
 brain_path = "datasets/brain.in" # in/out brain-tmp file
 genomes_path = 'datasets/' # genome datasets raw data
 genomes_list_path = "datasets/genome.list" # genome list
-dna_letters = ["A", "T", "G", "C", "N"] # dna alphabet [n for ANY nucl.]
 genomes = {} # main sources dict: genome_name
 seeds_checked = [] # list used for random checked patterns
 repeats = {} # repetitions 'tmp' dict: genome_name:(repets,pattern)
 known_patterns = [] # list used for known patterns
-estimated_max_range_for_library_completed = 50 # [MAX. LENGTH] for range [PATTERN]
-estimated_patterns_for_library_completed = 1466015503700 # x = y+4^z
-estimated_quantity_per_pattern_for_library_completed = int(estimated_patterns_for_library_completed / estimated_max_range_for_library_completed)
+dna_alphabet = ["A", "C", "G", "T"] # dna alphabet
+max_length = 50 # [MAX. LENGTH] for range [PATTERN]
 
 def convert_size(size):
     if (size == 0):
@@ -165,6 +163,7 @@ def search_patterns_lesson_with_an_ai():
         ranged_ending = False
         print("-"*15)
         print("\n[TRAIN-AI] [AUTOMATA] [SEARCH] Number of [PERMUTATIONS] estimated: [ "+str(ranged_permutations)+" ]\n")
+        time.sleep(10)
         print("-"*15+"\n")
         num_pat = 0
         time.sleep(10)
@@ -529,23 +528,11 @@ def extract_total_patterns_learned_from_local(memory):
     total_patterns = 0
     for m in memory:
         total_patterns = total_patterns + 1
-    print(" * [SETTINGS] Using [MAX. LENGTH] for range [PATTERN] = [ "+str(estimated_max_range_for_library_completed)+" ]\n")
-    if total_patterns < estimated_patterns_for_library_completed:
-        library_completion = (total_patterns/estimated_patterns_for_library_completed)*100
-        print("   + [LIBRARY COMPLETED]: [ "+str('%.20f' % library_completion)+"% ]")
-        if total_patterns > 0:
-            print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" / "+str(estimated_patterns_for_library_completed)+" ] \n")
-        else:
-            print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" / "+str(estimated_patterns_for_library_completed)+" ]")
+    print(" * [SETTINGS] Using [MAX. LENGTH] for range [PATTERN] = [ "+str(max_length)+" ]\n")
+    if total_patterns > 0:
+        print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]\n")
     else:
-        total_current_library_completion = (total_patterns/estimated_patterns_for_library_completed)*100
-        library_completion = 100
-        print("   + [LIBRARY COMPLETED]: [ "+str(library_completion)+"% ]")
-        print("   + [CURRENT LIBRARY]  : [ "+str('%.00f' % total_current_library_completion)+"% ] -> [ATTENTION!]: INCREASED [MAX. LENGTH] for range [PATTERN] -> REQUIRED!")
-        if total_patterns > 0:
-            print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]\n")
-        else:
-            print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]")
+        print("   + [PATTERNS LEARNED!]: [ "+str(total_patterns)+" ]")
     generate_pattern_len_report_structure(memory)
     return memory
 
@@ -766,306 +753,106 @@ def generate_pattern_len_report_structure(memory):
             pattern_len_50 = pattern_len_50 + 1
         else:
             pass
-    if pattern_len_1 < 101:
-        progression_len_1 = pattern_len_1 * "*"
-    else:
-        progression_len_1 = 100 * "*+"+str(pattern_len_1-100)
-    if pattern_len_2 < 101:
-        progression_len_2 = pattern_len_2 * "*"
-    else:
-        progression_len_2 = 100 * "*+"+str(pattern_len_2-100)
-    if pattern_len_3 < 101:
-        progression_len_3 = pattern_len_3 * "*"
-    else:
-        progression_len_3 = 100 * "*+"+str(pattern_len_3-100)
-    if pattern_len_4 < 101:
-        progression_len_4 = pattern_len_4 * "*"
-    else:
-        progression_len_4 = 100 * "*"+" 100+"+str(pattern_len_4-100)
-    if pattern_len_5 < 101:
-        progression_len_5 = pattern_len_5 * "*"
-    else:
-        progression_len_5 = 100 * "*+"+str(pattern_len_5-100)
-    if pattern_len_6 < 101:
-        progression_len_6 = pattern_len_6 * "*"
-    else:
-        progression_len_6 = 100 * "*+"+str(pattern_len_6-100)
-    if pattern_len_7 < 101:
-        progression_len_7 = pattern_len_7 * "*"
-    else:
-        progression_len_7 = 100 * "*+"+str(pattern_len_7-100)
-    if pattern_len_8 < 101:
-        progression_len_8 = pattern_len_8 * "*"
-    else:
-        progression_len_8 = 100 * "*+"+str(pattern_len_8-100)
-    if pattern_len_9 < 101:
-        progression_len_9 = pattern_len_9 * "*"
-    else:
-        progression_len_9 = 100 * "*+"+str(pattern_len_9-100)
-    if pattern_len_10 < 101:
-        progression_len_10 = pattern_len_10 * "*"
-    else:
-        progression_len_10 = 100 * "*+"+str(pattern_len_10-100)
-    if pattern_len_11 < 101:
-        progression_len_11 = pattern_len_11 * "*"
-    else:
-        progression_len_11 = 100 * "*+"+str(pattern_len_11-100)
-    if pattern_len_12 < 101:
-        progression_len_12 = pattern_len_12 * "*"
-    else:
-        progression_len_12 = 100 * "*+"+str(pattern_len_12-100)
-    if pattern_len_13 < 101:
-        progression_len_13 = pattern_len_13 * "*"
-    else:
-        progression_len_13 = 100 * "*+"+str(pattern_len_13-100)
-    if pattern_len_14 < 101:
-        progression_len_14 = pattern_len_14 * "*"
-    else:
-        progression_len_14 = 100 * "*+"+str(pattern_len_14-100)
-    if pattern_len_15 < 101:
-        progression_len_15 = pattern_len_15 * "*"
-    else:
-        progression_len_15 = 100 * "*+"+str(pattern_len_15-100)
-    if pattern_len_16 < 101:
-        progression_len_16 = pattern_len_16 * "*"
-    else:
-        progression_len_16 = 100 * "*+"+str(pattern_len_16-100)
-    if pattern_len_17 < 101:
-        progression_len_17 = pattern_len_17 * "*"
-    else:
-        progression_len_17 = 100 * "*+"+str(pattern_len_17-100)
-    if pattern_len_18 < 101:
-        progression_len_18 = pattern_len_18 * "*"
-    else:
-        progression_len_18 = 100 * "*+"+str(pattern_len_18-100)
-    if pattern_len_19 < 101:
-        progression_len_19 = pattern_len_19 * "*"
-    else:
-        progression_len_19 = 100 * "*+"+str(pattern_len_19-100)
-    if pattern_len_20 < 101:
-        progression_len_20 = pattern_len_20 * "*"
-    else:
-        progression_len_20 = 100 * "*+"+str(pattern_len_20-100)
-    if pattern_len_21 < 101:
-        progression_len_21 = pattern_len_21 * "*"
-    else:
-        progression_len_21 = 100 * "*+"+str(pattern_len_21-100)
-    if pattern_len_22 < 101:
-        progression_len_22 = pattern_len_22 * "*"
-    else:
-        progression_len_22 = 100 * "*+"+str(pattern_len_22-100)
-    if pattern_len_23 < 101:
-        progression_len_23 = pattern_len_23 * "*"
-    else:
-        progression_len_23 = 100 * "*+"+str(pattern_len_23-100)
-    if pattern_len_24 < 101:
-        progression_len_24 = pattern_len_24 * "*"
-    else:
-        progression_len_24 = 100 * "*+"+str(pattern_len_24-100)
-    if pattern_len_25 < 101:
-        progression_len_25 = pattern_len_25 * "*"
-    else:
-        progression_len_25 = 100 * "*+"+str(pattern_len_25-100)
-    if pattern_len_26 < 101:
-        progression_len_26 = pattern_len_26 * "*"
-    else:
-        progression_len_26 = 100 * "*+"+str(pattern_len_26-100)
-    if pattern_len_27 < 101:
-        progression_len_27 = pattern_len_27 * "*"
-    else:
-        progression_len_27 = 100 * "*+"+str(pattern_len_27-100)
-    if pattern_len_28 < 101:
-        progression_len_28 = pattern_len_28 * "*"
-    else:
-        progression_len_28 = 100 * "*+"+str(pattern_len_28-100)
-    if pattern_len_29 < 101:
-        progression_len_29 = pattern_len_29 * "*"
-    else:
-        progression_len_29 = 100 * "*+"+str(pattern_len_29-100)
-    if pattern_len_30 < 101:
-        progression_len_30 = pattern_len_30 * "*"
-    else:
-        progression_len_30 = 100 * "*+"+str(pattern_len_30-100)
-    if pattern_len_31 < 101:
-        progression_len_31 = pattern_len_31 * "*"
-    else:
-        progression_len_31 = 100 * "*+"+str(pattern_len_31-100)
-    if pattern_len_32 < 101:
-        progression_len_32 = pattern_len_32 * "*"
-    else:
-        progression_len_32 = 100 * "*+"+str(pattern_len_32-100)
-    if pattern_len_33 < 101:
-        progression_len_33 = pattern_len_33 * "*"
-    else:
-        progression_len_33 = 100 * "*+"+str(pattern_len_33-100)
-    if pattern_len_34 < 101:
-        progression_len_34 = pattern_len_34 * "*"
-    else:
-        progression_len_34 = 100 * "*+"+str(pattern_len_34-100)
-    if pattern_len_35 < 101:
-        progression_len_35 = pattern_len_35 * "*"
-    else:
-        progression_len_35 = 100 * "*+"+str(pattern_len_35-100)
-    if pattern_len_36 < 101:
-        progression_len_36 = pattern_len_36 * "*"
-    else:
-        progression_len_36 = 100 * "*+"+str(pattern_len_36-100)
-    if pattern_len_37 < 101:
-        progression_len_37 = pattern_len_37 * "*"
-    else:
-        progression_len_37 = 100 * "*+"+str(pattern_len_37-100)
-    if pattern_len_38 < 101:
-        progression_len_38 = pattern_len_38 * "*"
-    else:
-        progression_len_38 = 100 * "*+"+str(pattern_len_38-100)
-    if pattern_len_39 < 101:
-        progression_len_39 = pattern_len_39 * "*"
-    else:
-        progression_len_39 = 100 * "*+"+str(pattern_len_39-100)
-    if pattern_len_40 < 101:
-        progression_len_40 = pattern_len_40 * "*"
-    else:
-        progression_len_40 = 100 * "*+"+str(pattern_len_40-100)
-    if pattern_len_41 < 101:
-        progression_len_41 = pattern_len_41 * "*"
-    else:
-        progression_len_41 = 100 * "*+"+str(pattern_len_41-100)
-    if pattern_len_42 < 101:
-        progression_len_42 = pattern_len_42 * "*"
-    else:
-        progression_len_42 = 100 * "*+"+str(pattern_len_42-100)
-    if pattern_len_43 < 101:
-        progression_len_43 = pattern_len_43 * "*"
-    else:
-        progression_len_43 = 100 * "*+"+str(pattern_len_43-100)
-    if pattern_len_44 < 101:
-        progression_len_44 = pattern_len_44 * "*"
-    else:
-        progression_len_44 = 100 * "*+"+str(pattern_len_44-100)
-    if pattern_len_45 < 101:
-        progression_len_45 = pattern_len_45 * "*"
-    else:
-        progression_len_45 = 100 * "*+"+str(pattern_len_45-100)
-    if pattern_len_46 < 101:
-        progression_len_46 = pattern_len_46 * "*"
-    else:
-        progression_len_46 = 100 * "*+"+str(pattern_len_46-100)
-    if pattern_len_47 < 101:
-        progression_len_47 = pattern_len_47 * "*"
-    else:
-        progression_len_47 = 100 * "*+"+str(pattern_len_47-100)
-    if pattern_len_48 < 101:
-        progression_len_48 = pattern_len_48 * "*"
-    else:
-        progression_len_48 = 100 * "*+"+str(pattern_len_48-100)
-    if pattern_len_49 < 101:
-        progression_len_49 = pattern_len_49 * "*"
-    else:
-        progression_len_49 = 100 * "*+"+str(pattern_len_49-100)
-    if pattern_len_50 < 101:
-        progression_len_50 = pattern_len_50 * "*"
-    else:
-        progression_len_50 = 100 * "*+"+str(pattern_len_50-100)
     if pattern_len_1 > 0:
-        print("     - [length = 1] : | "+progression_len_1 + " [ "+str(pattern_len_1)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 1] : [ "+str(pattern_len_1)+" ]") 
     if pattern_len_2 > 0:
-        print("     - [length = 2] : | "+progression_len_2 + " [ "+str(pattern_len_2)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 2] : [ "+str(pattern_len_2)+" ]") 
     if pattern_len_3 > 0:
-        print("     - [length = 3] : | "+progression_len_3 + " [ "+str(pattern_len_3)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 3] : [ "+str(pattern_len_3)+" ]") 
     if pattern_len_4 > 0:
-        print("     - [length = 4] : | "+progression_len_4 + " [ "+str(pattern_len_4)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 4] : [ "+str(pattern_len_4)+" ]") 
     if pattern_len_5 > 0:
-        print("     - [length = 5] : | "+progression_len_5 + " [ "+str(pattern_len_5)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 5] : [ "+str(pattern_len_5)+" ]") 
     if pattern_len_6 > 0:
-        print("     - [length = 6] : | "+progression_len_6 + " [ "+str(pattern_len_6)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 6] : [ "+str(pattern_len_6)+" ]") 
     if pattern_len_7 > 0:
-        print("     - [length = 7] : | "+progression_len_7 + " [ "+str(pattern_len_7)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 7] : [ "+str(pattern_len_7)+" ]") 
     if pattern_len_8 > 0:
-        print("     - [length = 8] : | "+progression_len_8 + " [ "+str(pattern_len_8)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 8] : [ "+str(pattern_len_8)+" ]") 
     if pattern_len_9 > 0:
-        print("     - [length = 9] : | "+progression_len_9 + " [ "+str(pattern_len_9)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 9] : [ "+str(pattern_len_9)+" ]") 
     if pattern_len_10 > 0:
-        print("     - [length = 10]: | "+progression_len_10 + " [ "+str(pattern_len_10)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 10]: [ "+str(pattern_len_10)+" ]")
     if pattern_len_11 > 0:
-        print("     - [length = 11]: | "+progression_len_11 + " [ "+str(pattern_len_11)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 11]: [ "+str(pattern_len_11)+" ]")
     if pattern_len_12 > 0:
-        print("     - [length = 12]: | "+progression_len_12 + " [ "+str(pattern_len_12)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 12]: [ "+str(pattern_len_12)+" ]") 
     if pattern_len_13 > 0:
-        print("     - [length = 13]: | "+progression_len_13 + " [ "+str(pattern_len_13)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 13]: [ "+str(pattern_len_13)+" ]") 
     if pattern_len_14 > 0:
-        print("     - [length = 14]: | "+progression_len_14 + " [ "+str(pattern_len_14)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 14]: [ "+str(pattern_len_14)+" ]") 
     if pattern_len_15 > 0:
-        print("     - [length = 15]: | "+progression_len_15 + " [ "+str(pattern_len_15)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 15]: [ "+str(pattern_len_15)+" ]")
     if pattern_len_16 > 0:
-        print("     - [length = 16]: | "+progression_len_16 + " [ "+str(pattern_len_16)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 16]: [ "+str(pattern_len_16)+" ]") 
     if pattern_len_17 > 0:
-        print("     - [length = 17]: | "+progression_len_17 + " [ "+str(pattern_len_17)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 17]: [ "+str(pattern_len_17)+" ]") 
     if pattern_len_18 > 0:
-        print("     - [length = 18]: | "+progression_len_18 + " [ "+str(pattern_len_18)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 18]: [ "+str(pattern_len_18)+" ]")
     if pattern_len_19 > 0:
-        print("     - [length = 19]: | "+progression_len_19 + " [ "+str(pattern_len_19)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 19]: [ "+str(pattern_len_19)+" ]") 
     if pattern_len_20 > 0:
-        print("     - [length = 20]: | "+progression_len_20 + " [ "+str(pattern_len_20)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 20]: [ "+str(pattern_len_20)+" ]") 
     if pattern_len_21 > 0:
-        print("     - [length = 21]: | "+progression_len_21 + " [ "+str(pattern_len_21)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 21]: [ "+str(pattern_len_21)+" ]")
     if pattern_len_22 > 0:
-        print("     - [length = 22]: | "+progression_len_22 + " [ "+str(pattern_len_22)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 22]: [ "+str(pattern_len_22)+" ]")
     if pattern_len_23 > 0:
-        print("     - [length = 23]: | "+progression_len_23 + " [ "+str(pattern_len_23)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 23]: [ "+str(pattern_len_23)+" ]")
     if pattern_len_24 > 0:
-        print("     - [length = 24]: | "+progression_len_24 + " [ "+str(pattern_len_24)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 24]: [ "+str(pattern_len_24)+" ]")
     if pattern_len_25 > 0:
-        print("     - [length = 25]: | "+progression_len_25 + " [ "+str(pattern_len_25)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 25]: [ "+str(pattern_len_25)+" ]")
     if pattern_len_26 > 0:
-        print("     - [length = 26]: | "+progression_len_26 + " [ "+str(pattern_len_26)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 26]: [ "+str(pattern_len_26)+" ]")
     if pattern_len_27 > 0:
-        print("     - [length = 27]: | "+progression_len_27 + " [ "+str(pattern_len_27)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 27]: [ "+str(pattern_len_27)+" ]")
     if pattern_len_28 > 0:
-        print("     - [length = 28]: | "+progression_len_28 + " [ "+str(pattern_len_28)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 28]: [ "+str(pattern_len_28)+" ]")
     if pattern_len_29 > 0:
-        print("     - [length = 29]: | "+progression_len_29 + " [ "+str(pattern_len_29)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 29]: [ "+str(pattern_len_29)+" ]")
     if pattern_len_30 > 0:
-        print("     - [length = 30]: | "+progression_len_30 + " [ "+str(pattern_len_30)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 30]: [ "+str(pattern_len_30)+" ]")
     if pattern_len_31 > 0:
-        print("     - [length = 31]: | "+progression_len_31 + " [ "+str(pattern_len_31)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 31]: [ "+str(pattern_len_31)+" ]")
     if pattern_len_32 > 0:
-        print("     - [length = 32]: | "+progression_len_32 + " [ "+str(pattern_len_32)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 32]: [ "+str(pattern_len_32)+" ]")
     if pattern_len_33 > 0:
-        print("     - [length = 33]: | "+progression_len_33 + " [ "+str(pattern_len_33)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 33]: [ "+str(pattern_len_33)+" ]")
     if pattern_len_34 > 0:
-        print("     - [length = 34]: | "+progression_len_34 + " [ "+str(pattern_len_34)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 34]: [ "+str(pattern_len_34)+" ]")
     if pattern_len_35 > 0:
-        print("     - [length = 35]: | "+progression_len_35 + " [ "+str(pattern_len_35)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 35]: [ "+str(pattern_len_35)+" ]")
     if pattern_len_36 > 0:
-        print("     - [length = 36]: | "+progression_len_36 + " [ "+str(pattern_len_36)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 36]: [ "+str(pattern_len_36)+" ]")
     if pattern_len_37 > 0:
-        print("     - [length = 37]: | "+progression_len_37 + " [ "+str(pattern_len_37)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 37]: [ "+str(pattern_len_37)+" ]")
     if pattern_len_38 > 0:
-        print("     - [length = 38]: | "+progression_len_38 + " [ "+str(pattern_len_38)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 38]: [ "+str(pattern_len_38)+" ]")
     if pattern_len_39 > 0:
-        print("     - [length = 39]: | "+progression_len_39 + " [ "+str(pattern_len_39)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 39]: [ "+str(pattern_len_39)+" ]")
     if pattern_len_40 > 0:
-        print("     - [length = 40]: | "+progression_len_30 + " [ "+str(pattern_len_40)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 40]: [ "+str(pattern_len_40)+" ]")
     if pattern_len_41 > 0:
-        print("     - [length = 41]: | "+progression_len_41 + " [ "+str(pattern_len_41)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 41]: [ "+str(pattern_len_41)+" ]")
     if pattern_len_42 > 0:
-        print("     - [length = 42]: | "+progression_len_42 + " [ "+str(pattern_len_42)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 42]: [ "+str(pattern_len_42)+" ]")
     if pattern_len_43 > 0:
-        print("     - [length = 43]: | "+progression_len_43 + " [ "+str(pattern_len_43)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 43]: [ "+str(pattern_len_43)+" ]")
     if pattern_len_44 > 0:
-        print("     - [length = 44]: | "+progression_len_44 + " [ "+str(pattern_len_44)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 44]: [ "+str(pattern_len_44)+" ]")
     if pattern_len_45 > 0:
-        print("     - [length = 45]: | "+progression_len_45 + " [ "+str(pattern_len_45)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 45]: [ "+str(pattern_len_45)+" ]")
     if pattern_len_46 > 0:
-        print("     - [length = 46]: | "+progression_len_46 + " [ "+str(pattern_len_46)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 46]: [ "+str(pattern_len_46)+" ]")
     if pattern_len_47 > 0:
-        print("     - [length = 47]: | "+progression_len_47 + " [ "+str(pattern_len_47)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 47]: [ "+str(pattern_len_47)+" ]")
     if pattern_len_48 > 0:
-        print("     - [length = 48]: | "+progression_len_48 + " [ "+str(pattern_len_48)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 48]: [ "+str(pattern_len_48)+" ]")
     if pattern_len_49 > 0:
-        print("     - [length = 49]: | "+progression_len_49 + " [ "+str(pattern_len_49)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 49]: [ "+str(pattern_len_49)+" ]")
     if pattern_len_50 > 0:
-        print("     - [length => 50]: | "+progression_len_50 + " [ "+str(pattern_len_50)+" / "+str(estimated_quantity_per_pattern_for_library_completed)+" ]")
+        print("     - [length = 50]: [ "+str(pattern_len_50)+" ]")
 
 def print_banner():
     print("\n"+"="*50)
