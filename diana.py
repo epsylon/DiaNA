@@ -7,8 +7,8 @@ You should have received a copy of the GNU General Public License along
 with DiaNA; if not, write to the Free Software Foundation, Inc., 51
 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
-VERSION = "v0.2_beta"
-RELEASE = "17032020"
+VERSION = "v0.3_beta"
+RELEASE = "19032020"
 SOURCE1 = "https://code.03c8.net/epsylon/diana"
 SOURCE2 = "https://github.com/epsylon/diana"
 CONTACT = "epsylon@riseup.net - (https://03c8.net)"
@@ -19,14 +19,15 @@ DNA-equiv:
 """
 import re, os, glob, random, time, math
 
-brain_path = "datasets/brain.in" # in/out brain-tmp file
+brain_path = "resources/BRAIN/brain.in" # in/out brain-tmp file
 genomes_path = 'datasets/' # genome datasets raw data
 genomes_list_path = "datasets/genome.list" # genome list
+universal_primer_list_path = "resources/PATTERNS/UPL.list" # UPL list
+dna_codons_list_path = "resources/PATTERNS/DNAcodon.list" # DNA codon list
 genomes = {} # main sources dict: genome_name
 seeds_checked = [] # list used for random checked patterns
 repeats = {} # repetitions 'tmp' dict: genome_name:(repets,pattern)
 known_patterns = [] # list used for known patterns
-dna_alphabet = ["A", "C", "G", "T"] # dna alphabet
 max_length = 50 # [MAX. LENGTH] for range [PATTERN]
 
 def convert_size(size):
@@ -383,27 +384,142 @@ def convert_memory_to_dict(memory): # [index] = genome_name, pattern, num_rep
 
 def extract_pattern_most_present_local(memory):
     memory_dict = convert_memory_to_dict(memory)
-    if memory_dict:
+    if genomes:
+        try:
+            f=open(dna_codons_list_path, 'r')
+            codons =  f.readlines()
+            f.close()
+        except:
+            pass
         print("[LIBRE-AI] [REPORTING] -RESEARCHING- [STATISTICS]: \n")
         total_genomes = 0
-        total_patterns = 0
         for k, v in genomes.items():
             total_genomes = total_genomes + 1
-        for m in memory:
-            total_patterns = total_patterns + 1 # counter used for known patterns
-        max_size_pattern_name, less_size_pattern_name, biggest_pattern_name, biggest_pattern_size, smaller_pattern_name, smaller_pattern_size, total_patterns_all_genomes, most_present_patterns_by_len_list, less_present_patterns_by_len_list = extract_patterns_most_found_in_all_genomes(memory_dict)
-        print(" * Trying -[ "+str(total_patterns)+" ]- [PATTERNS LEARNED!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
-        print("\n   + Total [PATTERNS FOUND!]: [ "+str(total_patterns_all_genomes)+" ]")
-        print("\n     - [MOST-PRESENT!]: [ "+str(biggest_pattern_size)+" ] time(s) -> [ "+str(biggest_pattern_name)+" ]\n")
-        for k, v in most_present_patterns_by_len_list.items():
-            print("       * [length = "+str(k)+"] : [ "+str(v[1])+" ] time(s) -> [ "+str(v[0])+" ]")
-        print("\n     - [LESS-PRESENT!]: [ "+str(smaller_pattern_size)+" ] time(s) -> [ "+str(smaller_pattern_name)+" ]\n")
-        for n, m in less_present_patterns_by_len_list.items():
-            print("       * [length = "+str(n)+"] : [ "+str(m[1])+" ] time(s) -> [ "+str(m[0])+" ]")
-        max_size_pattern_name =  max(most_present_patterns_by_len_list, key=most_present_patterns_by_len_list.get)
-        less_size_pattern_name = min(most_present_patterns_by_len_list, key=most_present_patterns_by_len_list.get)
-        print("\n     - [LARGEST] : [ "+str(max_size_pattern_name)+" ] bp linear RNA")
-        print("     - [SHORTEST]: [ "+str(less_size_pattern_name)+" ] bp linear RNA\n")
+        if memory_dict:
+            total_patterns = 0
+            for m in memory:
+                total_patterns = total_patterns + 1 # counter used for known patterns
+            max_size_pattern_name, less_size_pattern_name, biggest_pattern_name, biggest_pattern_size, smaller_pattern_name, smaller_pattern_size, total_patterns_all_genomes, most_present_patterns_by_len_list, less_present_patterns_by_len_list = extract_patterns_most_found_in_all_genomes(memory_dict)
+            print(" * Trying -[ "+str(total_patterns)+" ]- [PATTERNS LEARNED!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+            if total_patterns_all_genomes:
+                print("\n   + Total [PATTERNS FOUND!]: [ "+str(total_patterns_all_genomes)+" ]")
+                biggest_pattern_name_codon = None
+                for c in codons:
+                    if c.split(":")[0] == str(biggest_pattern_name):
+                        biggest_pattern_name_codon = str(c.split(":")[1].replace("\n",""))
+                        print("\n     - [MOST-PRESENT!]: [ "+str(biggest_pattern_size)+" ] time(s) -> [ "+str(biggest_pattern_name)+" ] "+str(biggest_pattern_name_codon)+"\n")
+                if biggest_pattern_name_codon == None:
+                        print("\n     - [MOST-PRESENT!]: [ "+str(biggest_pattern_size)+" ] time(s) -> [ "+str(biggest_pattern_name)+" ]\n")
+                other_pattern_name_codon = None
+                for k, v in most_present_patterns_by_len_list.items():
+                    for c in codons:
+                        if c.split(":")[0] == str(v[0]):
+                            other_pattern_name_codon = str(c.split(":")[1].replace("\n",""))
+                            print("       * [length = "+str(k)+"] : [ "+str(v[1])+" ] time(s) -> [ "+str(v[0])+" ] "+str(other_pattern_name_codon))
+                    if other_pattern_name_codon == None:
+                        print("       * [length = "+str(k)+"] : [ "+str(v[1])+" ] time(s) -> [ "+str(v[0])+" ]")
+                    other_pattern_name_codon = None
+                smaller_pattern_name_codon = None
+                for c in codons:
+                    if c.split(":")[0] == str(smaller_pattern_name):
+                        smaller_pattern_name_codon = str(c.split(":")[1].replace("\n",""))
+                        print("\n     - [LESS-PRESENT!]: [ "+str(smaller_pattern_size)+" ] time(s) -> [ "+str(smaller_pattern_name)+" ] "+str(smaller_pattern_name_codon)+"\n")
+                if smaller_pattern_name_codon == None:
+                    print("\n     - [LESS-PRESENT!]: [ "+str(smaller_pattern_size)+" ] time(s) -> [ "+str(smaller_pattern_name)+" ]\n")
+                other_pattern_name_codon = None
+                for n, m in less_present_patterns_by_len_list.items():
+                    for c in codons:
+                        if c.split(":")[0] == str(m[0]):
+                            other_pattern_name_codon = str(c.split(":")[1].replace("\n",""))
+                            print("       * [length = "+str(n)+"] : [ "+str(m[1])+" ] time(s) -> [ "+str(m[0])+" ] "+str(other_pattern_name_codon))
+                    if other_pattern_name_codon == None:
+                        print("       * [length = "+str(n)+"] : [ "+str(m[1])+" ] time(s) -> [ "+str(m[0])+" ]")
+                    other_pattern_name_codon = None
+                max_size_pattern_name =  max(most_present_patterns_by_len_list, key=most_present_patterns_by_len_list.get)
+                less_size_pattern_name = min(most_present_patterns_by_len_list, key=most_present_patterns_by_len_list.get)
+                print("\n     - [LARGEST] : [ "+str(max_size_pattern_name)+" ] bp linear RNA")
+                print("     - [SHORTEST]: [ "+str(less_size_pattern_name)+" ] bp linear RNA\n")
+            else:
+                print("\n   + Total [PATTERNS FOUND!]: [ 0 ]\n")
+        try:
+            f=open(universal_primer_list_path, 'r')
+            UPL =  f.readlines()
+            f.close()
+            if UPL:
+                extract_potential_primer_pairs(UPL, total_genomes, codons)
+        except:
+            pass
+        if codons:
+            extract_potential_dna_codons(codons, total_genomes)
+
+def extract_potential_primer_pairs(UPL, total_genomes, codons):
+    total_universal_primer_pairs = 0
+    total_primer_pairs_found = 0
+    primer_pairs_found_list = {}
+    for pp in UPL:
+        total_universal_primer_pairs = total_universal_primer_pairs + 1
+        for k, v in genomes.items():
+            pair_name = pp.split(":")[1].upper().replace("\n","")
+            pair_sec = pp.split(":")[0]
+            if str(pair_name) in str(v.upper()):
+                pair_times = v.count(pair_name)
+                total_primer_pairs_found += pair_times
+                primer_pairs_found_list[pair_sec] = pair_name, total_primer_pairs_found
+    print(" * Trying -[ "+str(total_universal_primer_pairs)+" ]- [UNIVERSAL PRIMER PAIRS!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+    if total_primer_pairs_found:
+        total_primer_pairs_found_list = 0
+        for m, n in primer_pairs_found_list.items():
+            total_primer_pairs_found_list = total_primer_pairs_found_list + n[1]
+        print("\n   + Total [UNIVERSAL PRIMER PAIRS FOUND!]: [ "+str(total_primer_pairs_found_list)+" ]\n")
+        for m, n in primer_pairs_found_list.items():
+             print("       * "+str(m)+" -> [ "+str(n[0])+" ] : [ "+str(n[1])+" ] time(s)")
+        print ("")
+    else:
+        print("\n   + Total [UNIVERSAL PRIMER PAIRS FOUND!]: [ 0 ]\n")
+
+def extract_potential_dna_codons(codons, total_genomes):
+    total_codons = 0
+    total_codons_found = 0
+    codons_found_list = {}
+    codons_found_list_by_codon = {}
+    for c in codons:
+        total_codons = total_codons + 1
+        for k, v in genomes.items():
+            codon_name = c.split(":")[0].upper().replace("\n","")
+            if str(codon_name) in str(v.upper()):
+                codons_times = v.count(codon_name)
+                total_codons_found += codons_times
+                codons_found_list[codons_times] = c.split(":")[0], str(c.split(":")[1]), k
+    print(" * Trying -[ "+str(total_codons)+" ]- [PATTERN CODONS!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+    if total_codons_found:
+        for m, n in codons_found_list.items():
+            codon_sec = str(n[0])
+            codon_name = str(n[1].replace("\n",""))
+            if not codon_sec in codons_found_list_by_codon.keys():
+                codons_found_list_by_codon[codon_sec] = codon_name, m
+            else:
+                for r, s in codons_found_list_by_codon.items():
+                    if codon_sec == r:
+                        new_v = s[1] + m
+                        codons_found_list_by_codon[codon_sec] = codon_name, new_v
+        codons_found_list_by_name = {}
+        for g,z in codons_found_list_by_codon.items():
+            if not z[0] in codons_found_list_by_name.keys():
+                codons_found_list_by_name[z[0]]= z[1]
+            else:
+                for e, q in codons_found_list_by_name.items():
+                    if z[0] == e:
+                        new_s = q + z[1]
+                        codons_found_list_by_name[z[0]] = new_s
+        total_codons_by_codon = 0
+        for p, f in codons_found_list_by_name.items():
+            total_codons_by_codon = total_codons_by_codon + f
+        print("\n   + Total [PATTERN CODONS FOUND!]: [ "+str(total_codons_by_codon)+" ]\n")
+        for p, f in codons_found_list_by_name.items():
+            print("       * "+str(p)+" : "+str(f)+" time(s)")
+        print ("")
+    else:
+        print("\n   + Total [PATTERN CODONS FOUND!]: [ 0 ]\n")
 
 def extract_patterns_most_found_in_all_genomes(memory_dict):
     present_patterns = []
@@ -427,7 +543,6 @@ def extract_patterns_most_found_in_all_genomes(memory_dict):
     for i, v in largest_size_by_pattern.items():
         total_patterns_by_pattern = total_patterns_by_pattern + v[1]
         list_total_patterns_by_pattern[v[0]] = total_patterns_by_pattern
-        total_patterns_by_pattern = 0 # reset patterns counter
     biggest_pattern_name = None
     biggest_pattern_size = 0
     smaller_pattern_name = None
@@ -450,7 +565,7 @@ def extract_patterns_most_found_in_all_genomes(memory_dict):
                less_size_pattern_name = r
            if z > biggest_pattern_size:
                biggest_pattern_name = r
-               biggest_pattern_size = z
+               biggest_pattern_size = biggest_pattern_size + z
            else:
                if z < smaller_pattern_size:
                    smaller_pattern_name = r
@@ -516,9 +631,9 @@ def extract_storage_sizes():
     total_files_size = '%s %s' % (total_s,total_size_name)
     print(" * Total [FILE SIZES]: "+str(total_files_size)+"\n")
     if total_dataset_size:
-        print("   + [DATASET]: "+str(total_dataset_size))
+        print("   + [DATASET]: "+str(total_dataset_size)+"\n")
     if total_list_size:
-        print("   + [LIST]: "+str(total_list_size))
+        print("   + [LIST]: "+str(total_list_size)+"\n")
     if total_brain_size:
         print("   + [BRAIN]: "+str(total_brain_size)+"\n")
 
@@ -536,6 +651,9 @@ def extract_total_patterns_learned_from_local(memory):
 
 def list_genomes_on_database():
     print("[LIST] [REPORTING] [DNA SECUENCES] ... -> [STARTING!]\n")
+    f=open(dna_codons_list_path, 'r')
+    codons =  f.readlines()
+    f.close()
     print("-"*15 + "\n")
     f=open(genomes_list_path, 'w')
     for k, v in genomes.items():
@@ -552,6 +670,12 @@ def list_genomes_on_database():
         if v.count("N") > 0:
             print ("  + [N]  *ANY*   :", str(v.count("N")))
             f.write(str("  + [N]  *ANY*   : "+ str(v.count("N"))+"\n"))
+        for c in codons:
+            codon_sec = str(c.split(":")[0])
+            codon_name = str(c.split(":")[1].replace("\n",""))
+            codon_counter = str(v.count(str(c.split(":")[0])))
+            print ("  + ["+codon_sec+"] "+codon_name+" :", codon_counter)
+            f.write(str("  + ["+codon_sec+"] "+codon_name+" : "+ codon_counter)+"\n")
         print ("")
         f.write("\n")
     print("-"*15 + "\n")
