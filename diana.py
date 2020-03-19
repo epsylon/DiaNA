@@ -676,13 +676,12 @@ def list_genomes_on_database():
         if v.count("N") > 0:
             print ("  + [N]  *ANY*   :", str(v.count("N")))
             f.write(str("  + [N]  *ANY*   : "+ str(v.count("N"))+"\n"))
-        time.sleep(2)
         total_codons = 0
         for c in codons:
             codon_counter = v.count(str(c.split(":")[0]))
             total_codons = total_codons +  codon_counter
-        print ("\n  + Total [PATTERN CODONS]: [ "+str(total_codons)+" ] time(s)\n")
-        f.write(str("\n  + Total [PATTERN CODONS]: [ "+str(total_codons)+" ] time(s)\n"))
+        print ("\n  + Total [PATTERN CODONS!]: [ "+str(total_codons)+" ] time(s)\n")
+        f.write(str("\n  + Total [PATTERN CODONS!]: [ "+str(total_codons)+" ] time(s)\n"))
         for c in codons:
             codon_sec = str(c.split(":")[0])
             codon_name = str(c.split(":")[1].replace("\n",""))
