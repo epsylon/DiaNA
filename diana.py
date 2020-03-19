@@ -515,6 +515,10 @@ def extract_potential_dna_codons(codons, total_genomes):
         for p, f in codons_found_list_by_name.items():
             total_codons_by_codon = total_codons_by_codon + f
         print("\n   + Total [PATTERN CODONS FOUND!]: [ "+str(total_codons_by_codon)+" ]\n")
+        most_present_codons_found = max(codons_found_list_by_name, key=codons_found_list_by_name.get)
+        less_present_codons_found = min(codons_found_list_by_name, key=codons_found_list_by_name.get)
+        print("     - [MOST-PRESENT!]: "+str(most_present_codons_found))
+        print("     - [LESS-PRESENT!]: "+str(less_present_codons_found)+"\n")
         for p, f in codons_found_list_by_name.items():
             print("       * "+str(p)+" : "+str(f)+" time(s)")
         print ("")
@@ -536,7 +540,6 @@ def extract_patterns_most_found_in_all_genomes(memory_dict):
     largest_size_by_pattern_index = 0
     for k,v in repeats.items():
         largest_size_by_pattern_index = largest_size_by_pattern_index + 1
-        total_patterns_all_genomes = total_patterns_all_genomes + v[2] # total patterns all genomes
         largest_size_by_pattern[largest_size_by_pattern_index] = v[0], v[2]
     total_patterns_by_pattern = 0
     list_total_patterns_by_pattern = {}
@@ -549,6 +552,7 @@ def extract_patterns_most_found_in_all_genomes(memory_dict):
     smaller_pattern_size = 0
     max_size_pattern = 0
     for r, z in list_total_patterns_by_pattern.items():
+        total_patterns_all_genomes = total_patterns_all_genomes + z
         pattern_length = len(r)
         if pattern_length > max_size_pattern:
            max_size_pattern_name = r
@@ -565,7 +569,7 @@ def extract_patterns_most_found_in_all_genomes(memory_dict):
                less_size_pattern_name = r
            if z > biggest_pattern_size:
                biggest_pattern_name = r
-               biggest_pattern_size = biggest_pattern_size + z
+               biggest_pattern_size = z
            else:
                if z < smaller_pattern_size:
                    smaller_pattern_name = r
@@ -657,7 +661,7 @@ def list_genomes_on_database():
     print("-"*15 + "\n")
     f=open(genomes_list_path, 'w')
     for k, v in genomes.items():
-        print ("*"+str(k)+ "-> [ "+str(len(v))+" bp linear RNA ]")
+        print ("*"+str(k)+ " -> [ "+str(len(v))+" bp linear RNA ]")
         print ("  + [A] Adenine  :", str(v.count("A")))
         print ("  + [G] Guanine  :", str(v.count("G")))
         print ("  + [C] Cytosine :", str(v.count("C")))
