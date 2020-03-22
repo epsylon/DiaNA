@@ -24,6 +24,8 @@ genomes_path = 'datasets/' # genome datasets raw data
 genomes_list_path = "datasets/genome.list" # genome list
 universal_primer_list_path = "resources/PATTERNS/UPL.list" # UPL list
 dna_codons_list_path = "resources/PATTERNS/DNAcodon.list" # DNA codon list
+open_reading_frames_init_path = "resources/PATTERNS/ORF/ORF-init.list" # ORF init list
+open_reading_frames_end_path = "resources/PATTERNS/ORF/ORF-end.list" # ORF end list
 genomes = {} # main sources dict: genome_name
 seeds_checked = [] # list used for random checked patterns
 repeats = {} # repetitions 'tmp' dict: genome_name:(repets,pattern)
@@ -400,7 +402,7 @@ def extract_pattern_most_present_local(memory):
             for m in memory:
                 total_patterns = total_patterns + 1 # counter used for known patterns
             max_size_pattern_name, less_size_pattern_name, biggest_pattern_name, biggest_pattern_size, smaller_pattern_name, smaller_pattern_size, total_patterns_all_genomes, most_present_patterns_by_len_list, less_present_patterns_by_len_list = extract_patterns_most_found_in_all_genomes(memory_dict)
-            print(" * Trying -[ "+str(total_patterns)+" ]- [PATTERNS LEARNED!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+            print(" * Searching -[ "+str(total_patterns)+" ]- [PATTERNS LEARNED!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
             if total_patterns_all_genomes:
                 print("\n   + Total [PATTERNS FOUND!]: [ "+str(total_patterns_all_genomes)+" ]")
                 biggest_pattern_name_codon = None
@@ -465,7 +467,7 @@ def extract_potential_primer_pairs(UPL, total_genomes, codons):
                 pair_times = v.count(pair_name)
                 total_primer_pairs_found += pair_times
                 primer_pairs_found_list[pair_sec] = pair_name, total_primer_pairs_found
-    print(" * Trying -[ "+str(total_universal_primer_pairs)+" ]- [UNIVERSAL PRIMER PAIRS!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+    print(" * Searching -[ "+str(total_universal_primer_pairs)+" ]- [UNIVERSAL PRIMER PAIRS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
     if total_primer_pairs_found:
         total_primer_pairs_found_list = 0
         for m, n in primer_pairs_found_list.items():
@@ -482,19 +484,21 @@ def extract_potential_dna_codons(codons, total_genomes):
     total_codons_found = 0
     codons_found_list = {}
     codons_found_list_by_codon = {}
+    index = 0
     for c in codons:
         total_codons = total_codons + 1
         for k, v in genomes.items():
             codon_name = c.split(":")[0].upper().replace("\n","")
             if str(codon_name) in str(v.upper()):
+                index = index + 1
                 codons_times = v.count(codon_name)
                 total_codons_found += codons_times
-                codons_found_list[codons_times] = c.split(":")[0], str(c.split(":")[1]), k
-    print(" * Trying -[ "+str(total_codons)+" ]- [PATTERN CODONS!] against -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+                codons_found_list[index] = codons_times, c.split(":")[0], str(c.split(":")[1]), k
+    print(" * Searching -[ "+str(total_codons)+" ]- [PATTERN CODONS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
     if total_codons_found:
         for m, n in codons_found_list.items():
-            codon_sec = str(n[0])
-            codon_name = str(n[1].replace("\n",""))
+            codon_sec = str(n[1])
+            codon_name = str(n[2].replace("\n",""))
             if not codon_sec in codons_found_list_by_codon.keys():
                 codons_found_list_by_codon[codon_sec] = codon_name, m
             else:
@@ -524,6 +528,72 @@ def extract_potential_dna_codons(codons, total_genomes):
         print ("")
     else:
         print("\n   + Total [PATTERN CODONS FOUND!]: [ 0 ]\n")
+    if codons_found_list:
+        extract_open_reading_frames(total_genomes)
+
+def extract_open_reading_frames(total_genomes):
+    try:
+        f=open(open_reading_frames_init_path, 'r')
+        frames_init =  f.readlines()
+        f.close()
+    except:
+        pass
+    try:
+        e=open(open_reading_frames_end_path, 'r')
+        frames_end =  e.readlines()
+        e.close()
+    except:
+        pass
+    if frames_init and frames_end:
+        print(" * Searching for [OPEN READING FRAMES!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+        total_opr_found = 0
+        r_found_by_pattern = 0
+        opr_found_list = {}
+        index = 0
+        for k, v in genomes.items():
+            for opr_i in frames_init:
+                opr_init_name = opr_i.replace("\n","")
+                if str(opr_init_name) in str(v.upper()): # open reading INIT frame found!
+                    for opr_e in frames_end:
+                        opr_end_name = opr_e.replace("\n","")
+                        if str(opr_end_name) in str(v.upper()): # open reading END frame found!
+                            regex_opr = str(opr_init_name) +"(.+?)"+str(opr_end_name) # regex magics! - extract secuence between ocr_i and ocr_e
+                            pattern_record = re.compile(regex_opr)
+                            record = re.findall(pattern_record, str(v.upper()))
+                            for r in record: # now extract each field
+                                total_opr_found = total_opr_found + 1
+                                r_found_by_pattern = v.count(opr_init_name+r+opr_end_name)
+                                index = index + 1
+                                opr_found_list[index] = k, r_found_by_pattern, opr_init_name, r, opr_end_name # [index]: genome, num_times, opr_i, pattern, opr_e
+        if total_opr_found > 0:                     
+            print("\n   + Total [OPEN READING FRAMES FOUND!]: [ "+str(total_opr_found)+" ]\n")
+            most_present_opr_found = max(opr_found_list, key=opr_found_list.get)
+            largest_pattern = 0
+            largest_pattern_found = None
+            for m, n in opr_found_list.items():
+                opr_found_init = str(n[2])
+                opr_found_pattern = str(n[3])
+                opr_found_end = str(n[4])
+                opr_found_times = str(n[1])
+                opr_found_genome = str(n[0])
+                opr_found_pattern_len = len(opr_found_pattern)
+                if opr_found_pattern_len > largest_pattern:
+                    largest_pattern = opr_found_pattern_len
+                    largest_pattern_found = opr_found_init, opr_found_pattern, opr_found_end, opr_found_genome
+                if m == most_present_opr_found: 
+                    most_present_opr_found_init = str(n[2])
+                    most_present_opr_found_pattern = str(n[3])
+                    most_present_opr_found_end = str(n[4])
+                    most_present_opr_found_times = str(n[1])
+                    most_present_opr_found_genome = str(n[0])
+            print("     - [MOST-PRESENT!]: [ "+str(most_present_opr_found_times)+" ] time(s) found in [ "+str(most_present_opr_found_genome)+" ] is -> [ "+str(most_present_opr_found_init)+"-{?}-"+str(most_present_opr_found_end)+" ]:\n")
+            print(str("       * "+str(most_present_opr_found_init+most_present_opr_found_pattern+most_present_opr_found_end)))
+            print("\n     - [LARGEST]: [ "+str(len(largest_pattern_found[1]))+" bp linear RNA ] found in [ "+str(largest_pattern_found[3])+" ] is -> [ "+str(largest_pattern_found[0])+"-{?}-"+str(largest_pattern_found[2])+" ]:\n")
+            print(str("       * "+str(largest_pattern_found[0]+largest_pattern_found[1]+largest_pattern_found[2])+"\n"))
+        else:
+            print("\n   + Total [OPEN READING FRAMES FOUND!]: [ 0 ]\n")
+    else:
+        print("\n   + Total [OPEN READING FRAMES FOUND!]: [ 0 ]\n")
 
 def extract_patterns_most_found_in_all_genomes(memory_dict):
     present_patterns = []
@@ -659,6 +729,12 @@ def list_genomes_on_database():
     codons =  f.readlines()
     f.close()
     print("-"*15 + "\n")
+    f=open(open_reading_frames_init_path, 'r')
+    frames_init =  f.readlines()
+    f.close()
+    f=open(open_reading_frames_end_path, 'r')
+    frames_end =  f.readlines()
+    f.close()
     f=open(genomes_list_path, 'w')
     for k, v in genomes.items():
         print ("* "+str(k))
@@ -674,8 +750,8 @@ def list_genomes_on_database():
         f.write(str("    - [C] Cytosine : " + str(v.count("C"))+"\n"))
         f.write(str("    - [T] Thymine  : " + str(v.count("T"))+"\n"))
         if v.count("N") > 0:
-            print ("  + [N]  *ANY*   :", str(v.count("N")))
-            f.write(str("  + [N]  *ANY*   : "+ str(v.count("N"))+"\n"))
+            print ("    - [N]  *ANY*   :", str(v.count("N")))
+            f.write(str("    - [N]  *ANY*   : "+ str(v.count("N"))+"\n"))
         total_codons = 0
         for c in codons:
             codon_counter = v.count(str(c.split(":")[0]))
@@ -688,6 +764,30 @@ def list_genomes_on_database():
             codon_counter = str(v.count(str(c.split(":")[0])))
             print ("    - ["+codon_sec+"] "+codon_name+" :", codon_counter)
             f.write(str("    - ["+codon_sec+"] "+codon_name+" : "+ codon_counter)+"\n")
+        if frames_init and frames_end:
+            total_opr_found = 0
+            r_found_by_pattern = 0
+            opr_found_list = {}
+            index = 0
+            for opr_i in frames_init:
+                opr_init_name = opr_i.replace("\n","")
+                if str(opr_init_name) in str(v.upper()): # open reading INIT frame found!
+                    for opr_e in frames_end:
+                        opr_end_name = opr_e.replace("\n","")
+                        if str(opr_end_name) in str(v.upper()): # open reading END frame found!
+                            regex_opr = str(opr_init_name) +"(.+?)"+str(opr_end_name) # regex magics! - extract secuence between ocr_i and ocr_e
+                            pattern_record = re.compile(regex_opr)
+                            record = re.findall(pattern_record, str(v.upper()))
+                            for r in record: # now extract each field
+                                total_opr_found = total_opr_found + 1
+                                r_found_by_pattern = v.count(opr_init_name+r+opr_end_name)
+                                index = index + 1
+                                opr_found_list[index] = k, r_found_by_pattern, opr_init_name, r, opr_end_name # [index]: genome, num_times, opr_i, pattern, opr_e
+            print ("\n  + Total [OPEN READING FRAMES!]: [ "+str(total_opr_found)+" ] \n")
+            f.write(str("\n  + Total [OPEN READING FRAMES!]: [ "+str(total_opr_found)+" ] \n"))
+            for m, n in opr_found_list.items():
+                print("    - ["+str(n[2])+str(n[3])+str(n[4])+"] : [ "+str(n[1])+" ] time(s)")
+                f.write(str("    - ["+str(n[2])+str(n[3])+str(n[4])+"] : "+ str(n[1]))+"\n")
         print ("")
         f.write("\n")
     print("-"*15 + "\n")
