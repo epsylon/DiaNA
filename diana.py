@@ -23,7 +23,8 @@ brain_path = "resources/BRAIN/brain.in" # in/out brain-tmp file
 genomes_path = 'datasets/' # genome datasets raw data
 genomes_list_path = "datasets/genome.list" # genome list
 universal_primer_list_path = "resources/PATTERNS/UPL.list" # UPL list
-dna_codons_list_path = "resources/PATTERNS/DNAcodon.list" # DNA codon list
+dna_codons_list_path = "resources/PATTERNS/CODONS/DNAcodon.list" # DNA codon list
+protein_formula_path = "resources/PATTERNS/CODONS/AAformula.list" # Protein Chemical Formula list
 open_reading_frames_init_path = "resources/PATTERNS/ORF/ORF-init.list" # ORF init list
 open_reading_frames_end_path = "resources/PATTERNS/ORF/ORF-end.list" # ORF end list
 genomes = {} # main sources dict: genome_name
@@ -31,6 +32,9 @@ seeds_checked = [] # list used for random checked patterns
 repeats = {} # repetitions 'tmp' dict: genome_name:(repets,pattern)
 known_patterns = [] # list used for known patterns
 max_length = 50 # [MAX. LENGTH] for range [PATTERN]
+
+SUB = str.maketrans("0123456789", "₀₁₂₃₄₅₆₇₈₉")
+SUP = str.maketrans("0123456789", "⁰¹²³⁴⁵⁶⁷⁸⁹")
 
 def convert_size(size):
     if (size == 0):
@@ -358,10 +362,10 @@ def libre_ai_show_statistics(memory):
         print("   + [T] Thymine  : "+str(total_thymine))
     if total_any > 0:
         if nucleotid_more_present == total_any:
-            print("   + [N]  *ANY*   : "+str(total_any)+" <- [MAX]\n")
+            print("   + [N]  *ANY*   : "+str(total_any)+" <- [MAX]")
         else:
-            print("   + [N]  *ANY*   : "+str(total_any)+"\n")
-    print("-"*5 + "\n")
+            print("   + [N]  *ANY*   : "+str(total_any))
+    print("\n"+"-"*5 + "\n")
     extract_pattern_most_present_local(memory)
 
 def convert_memory_to_dict(memory): # [index] = genome_name, pattern, num_rep
@@ -467,6 +471,7 @@ def extract_potential_primer_pairs(UPL, total_genomes, codons):
                 pair_times = v.count(pair_name)
                 total_primer_pairs_found += pair_times
                 primer_pairs_found_list[pair_sec] = pair_name, total_primer_pairs_found
+    print(" "+"-"*5+"\n")
     print(" * Searching -[ "+str(total_universal_primer_pairs)+" ]- [UNIVERSAL PRIMER PAIRS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
     if total_primer_pairs_found:
         total_primer_pairs_found_list = 0
@@ -478,6 +483,7 @@ def extract_potential_primer_pairs(UPL, total_genomes, codons):
         print ("")
     else:
         print("\n   + Total [UNIVERSAL PRIMER PAIRS FOUND!]: [ 0 ]\n")
+    print(" "+"-"*5+"\n")
 
 def extract_potential_dna_codons(codons, total_genomes):
     total_codons = 0
@@ -494,7 +500,7 @@ def extract_potential_dna_codons(codons, total_genomes):
                 codons_times = v.count(codon_name)
                 total_codons_found += codons_times
                 codons_found_list[index] = codons_times, c.split(":")[0], str(c.split(":")[1]), k
-    print(" * Searching -[ "+str(total_codons)+" ]- [PATTERN CODONS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+    print(" * Searching -[ "+str(total_codons)+" ]- [AMINO ACIDS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
     if total_codons_found:
         for m, n in codons_found_list.items():
             codon_sec = str(n[1])
@@ -518,7 +524,7 @@ def extract_potential_dna_codons(codons, total_genomes):
         total_codons_by_codon = 0
         for p, f in codons_found_list_by_name.items():
             total_codons_by_codon = total_codons_by_codon + f
-        print("\n   + Total [PATTERN CODONS FOUND!]: [ "+str(total_codons_by_codon)+" ]\n")
+        print("\n   + Total [AMINO ACIDS FOUND!]: [ "+str(total_codons_by_codon)+" ]\n")
         most_present_codons_found = max(codons_found_list_by_name, key=codons_found_list_by_name.get)
         less_present_codons_found = min(codons_found_list_by_name, key=codons_found_list_by_name.get)
         print("     - [MOST-PRESENT!]: "+str(most_present_codons_found))
@@ -527,9 +533,10 @@ def extract_potential_dna_codons(codons, total_genomes):
             print("       * "+str(p)+" : "+str(f)+" time(s)")
         print ("")
     else:
-        print("\n   + Total [PATTERN CODONS FOUND!]: [ 0 ]\n")
-    if codons_found_list:
-        extract_open_reading_frames(total_genomes)
+        print("\n   + Total [AMINO ACIDS FOUND!]: [ 0 ]\n")
+    print(" "+"-"*5+"\n")
+    if total_genomes > 0:
+        extract_protein_secuence(total_genomes, codons_found_list, codons)
 
 def extract_open_reading_frames(total_genomes):
     try:
@@ -545,7 +552,7 @@ def extract_open_reading_frames(total_genomes):
     except:
         pass
     if frames_init and frames_end:
-        print(" * Searching for [OPEN READING FRAMES!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
+        print(" * Searching [OPEN READING FRAMES!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:")
         total_opr_found = 0
         r_found_by_pattern = 0
         opr_found_list = {}
@@ -594,6 +601,73 @@ def extract_open_reading_frames(total_genomes):
             print("\n   + Total [OPEN READING FRAMES FOUND!]: [ 0 ]\n")
     else:
         print("\n   + Total [OPEN READING FRAMES FOUND!]: [ 0 ]\n")
+    
+def extract_protein_secuence(total_genomes, codons_found_list, codons):
+    print(" * Searching [PROTEINS!] in -[ "+str(total_genomes)+ " ]- [DNA SECUENCES]:\n")
+    total_protein_secuences_found = 0
+    protein_secuences_list = {}
+    index = 0
+    p = {}
+    for c in codons:
+        codon_sec = c.split(":")[0]
+        codon_name = c.split(":")[1].replace("\n","")
+        p[codon_sec] = codon_name
+    for k, v in genomes.items():
+        ps = ""
+        dna = str(v)
+        for i in range(0, len(dna)-(3+len(dna)%3), 3): # searching protein secuence
+            if "Stop" in p[dna[i:i+3]]:
+                break
+            ps += p[dna[i:i+3]].split("(")[1].split(")")[0]
+        index = index + 1
+        total_protein_secuences_found = total_protein_secuences_found + 1
+        protein_secuences_list[index] = ps, k
+        ps = "" # clean protein secuence
+    if total_protein_secuences_found > 0:
+        protein_most_present = {}
+        for value in protein_secuences_list.values(): 
+            if value[0] in protein_most_present.keys():
+                protein_most_present[value[0]] = protein_most_present[value[0]] + 1
+            else:
+                protein_most_present[value[0]] = 1
+        most_present_protein_found = max(protein_most_present, key=protein_most_present.get)
+        print("   + Total [PROTEINS FOUND!]: [ "+str(total_protein_secuences_found)+" ]\n")
+        largest_protein_secuence = 0
+        largest_protein_secuence_found = None
+        most_present_protein_found_counter = 0
+        for m, n in protein_secuences_list.items():
+            if most_present_protein_found == n[0]:
+                most_present_protein_found_counter = most_present_protein_found_counter + 1
+            protein_secuence_pattern_len = len(str(n[0]))
+            if protein_secuence_pattern_len > largest_protein_secuence:
+                largest_protein_secuence = protein_secuence_pattern_len
+                largest_protein_secuence_found = m, n
+        print("     - [MOST-PRESENT!]: [ "+str(most_present_protein_found_counter)+" ] time(s) is -> [ "+str(most_present_protein_found)+" ]\n")
+        protein_chemical_formula = ""
+        f = open(protein_formula_path, "r")
+        formulas = f.readlines()
+        f.close()
+        for a in most_present_protein_found:
+            for f in formulas:
+                if a == f.split(":")[0]:
+                    protein_chemical_formula += str(f.split(":")[1].replace("\n","")+"+")
+        pcfl = len(protein_chemical_formula)
+        protein_chemical_final_formula =  protein_chemical_formula[:pcfl-1].translate(SUB)
+        print("       *", protein_chemical_final_formula+"\n") 
+        print("     - [LARGEST]: [ "+str(len(largest_protein_secuence_found[1][0]))+" bp linear RNA ] found in [ "+str(largest_protein_secuence_found[1][1])+" ] is -> [ "+str(largest_protein_secuence_found[1][0])+" ]\n")
+        largest_protein_chemical_formula = ""
+        for a in largest_protein_secuence_found[1][0]:
+            for f in formulas:
+                if a == f.split(":")[0]:
+                    largest_protein_chemical_formula += str(f.split(":")[1].replace("\n","")+"+")
+        pcfl = len(largest_protein_chemical_formula)
+        largest_protein_chemical_final_formula = largest_protein_chemical_formula[:pcfl-1].translate(SUB)
+        print("       *", largest_protein_chemical_final_formula+"\n")             
+    else:
+        print("\n   + Total [PROTEINS FOUND!]: [ 0 ]\n")
+    print(" "+"-"*5+"\n")
+    if codons_found_list:
+        extract_open_reading_frames(total_genomes)
 
 def extract_patterns_most_found_in_all_genomes(memory_dict):
     present_patterns = []
@@ -735,16 +809,23 @@ def list_genomes_on_database():
     f=open(open_reading_frames_end_path, 'r')
     frames_end =  f.readlines()
     f.close()
+    f = open(protein_formula_path, "r")
+    formulas = f.readlines()
+    f.close()
     f=open(genomes_list_path, 'w')
+    p = {}
     for k, v in genomes.items():
+        total_protein_secuences_found = 0
+        print ("="*20+"\n")
+        f.write(str("="*20+"\n\n"))
         print ("* "+str(k))
-        print ("\n  + Total [NUCLEOTIDS]: [ "+str(len(v)-1)+" bp linear RNA ]\n")
+        print ("\n  + Total [NUCLEOTIDS FOUND!]: [ "+str(len(v)-1)+" bp linear RNA ]\n")
         print ("    - [A] Adenine  :", str(v.count("A")))
         print ("    - [G] Guanine  :", str(v.count("G")))
         print ("    - [C] Cytosine :", str(v.count("C")))
         print ("    - [T] Thymine  :", str(v.count("T")))
         f.write(str("* "+str(k)+"\n"))
-        f.write(str("\n  + Total [NUCLEOTIDS]: [ "+str(len(v)-1)+" bp linear RNA ]\n"))
+        f.write(str("\n  + Total [NUCLEOTIDS FOUND!]: [ "+str(len(v)-1)+" bp linear RNA ]\n"))
         f.write(str("    - [A] Adenine  : " + str(v.count("A"))+"\n"))
         f.write(str("    - [G] Guanine  : " + str(v.count("G"))+"\n"))
         f.write(str("    - [C] Cytosine : " + str(v.count("C"))+"\n"))
@@ -755,15 +836,37 @@ def list_genomes_on_database():
         total_codons = 0
         for c in codons:
             codon_counter = v.count(str(c.split(":")[0]))
-            total_codons = total_codons +  codon_counter
-        print ("\n  + Total [PATTERN CODONS!]: [ "+str(total_codons)+" ] time(s)\n")
-        f.write(str("\n  + Total [PATTERN CODONS!]: [ "+str(total_codons)+" ] time(s)\n"))
+            total_codons = total_codons + codon_counter
+            codon_sec = c.split(":")[0]
+            codon_name = c.split(":")[1].replace("\n","")
+            p[codon_sec] = codon_name
+        print ("\n  + Total [AMINO ACIDS FOUND!]: [ "+str(total_codons)+" ]\n")
+        f.write(str("\n  + Total [AMINO ACIDS FOUND!]: [ "+str(total_codons)+" ]\n"))
         for c in codons:
             codon_sec = str(c.split(":")[0])
             codon_name = str(c.split(":")[1].replace("\n",""))
             codon_counter = str(v.count(str(c.split(":")[0])))
             print ("    - ["+codon_sec+"] "+codon_name+" :", codon_counter)
             f.write(str("    - ["+codon_sec+"] "+codon_name+" : "+ codon_counter)+"\n")
+        ps = ""
+        dna = str(v)
+        for i in range(0, len(dna)-(3+len(dna)%3), 3): # searching protein secuence
+            if "Stop" in p[dna[i:i+3]]:
+                break
+            ps += p[dna[i:i+3]].split("(")[1].split(")")[0]
+        total_protein_secuences_found = total_protein_secuences_found + 1
+        print ("\n  + Total [PROTEINS FOUND!]: [ "+str(total_protein_secuences_found)+" ]\n")
+        f.write(str("\n  + Total [PROTEINS FOUND!]: [ "+str(total_protein_secuences_found)+" ]\n"))
+        protein_chemical_formula = ""
+        for a in ps:
+            for formula in formulas:
+                if a == formula.split(":")[0]:
+                    protein_chemical_formula += str(formula.split(":")[1].replace("\n","")+"+")
+        pcfl = len(protein_chemical_formula)
+        protein_chemical_final_formula = protein_chemical_formula[:pcfl-1].translate(SUB)
+        print ("    - ["+ps+"] : "+protein_chemical_final_formula)
+        f.write(str("    - ["+ps+"] : "+protein_chemical_final_formula)+"\n")
+        ps = "" # clean protein secuence
         if frames_init and frames_end:
             total_opr_found = 0
             r_found_by_pattern = 0
@@ -783,10 +886,10 @@ def list_genomes_on_database():
                                 r_found_by_pattern = v.count(opr_init_name+r+opr_end_name)
                                 index = index + 1
                                 opr_found_list[index] = k, r_found_by_pattern, opr_init_name, r, opr_end_name # [index]: genome, num_times, opr_i, pattern, opr_e
-            print ("\n  + Total [OPEN READING FRAMES!]: [ "+str(total_opr_found)+" ] \n")
-            f.write(str("\n  + Total [OPEN READING FRAMES!]: [ "+str(total_opr_found)+" ] \n"))
+            print ("\n  + Total [OPEN READING FRAMES FOUND!]: [ "+str(total_opr_found)+" ]")
+            f.write(str("\n  + Total [OPEN READING FRAMES FOUND!]: [ "+str(total_opr_found)+" ] \n"))
             for m, n in opr_found_list.items():
-                print("    - ["+str(n[2])+str(n[3])+str(n[4])+"] : [ "+str(n[1])+" ] time(s)")
+                #print("    - ["+str(n[2])+str(n[3])+str(n[4])+"] : [ "+str(n[1])+" ] time(s)")
                 f.write(str("    - ["+str(n[2])+str(n[3])+str(n[4])+"] : "+ str(n[1]))+"\n")
         print ("")
         f.write("\n")
